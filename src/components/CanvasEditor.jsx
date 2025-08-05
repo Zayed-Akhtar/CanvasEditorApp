@@ -4,8 +4,10 @@ import { db } from "../firebase";
 import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 import debounce from "lodash.debounce";
 
-function loadCanvasFromJSON(canvas, json) {
-  canvas.loadFromJSON(json, () => canvas.renderAll());
+async function loadCanvasFromJSON(canvas, json) {
+  if (!json) return;
+  await canvas.loadFromJSON(json);
+  canvas.renderAll();
 }
 
 function CanvasEditor({ sceneId }) {
@@ -14,34 +16,38 @@ function CanvasEditor({ sceneId }) {
   const [isPenActive, setIsPenActive] = React.useState(false);
 
   // Load scene from Firestore
-  useEffect(() => {
-    const canvas = new fabric.Canvas(canvasRef.current, { width: 800, height: 600, backgroundColor: "#fff" });
-    fabricRef.current = canvas;
+useEffect(() => {
+  const canvas = new fabric.Canvas(canvasRef.current, { width: 800, height: 600, backgroundColor: "#fff" });
+  fabricRef.current = canvas;
 
-    // Load canvas state from Firestore
-    const docRef = doc(db, "scenes", sceneId);
-    getDoc(docRef).then((docSnap) => {
-      if (docSnap.exists()) {
-        loadCanvasFromJSON(canvas, docSnap.data().canvas || null);
+  const docRef = doc(db, "scenes", sceneId);
+  
+  // Async fetch and loader for first mount
+  async function fetchAndLoad() {
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists() && docSnap.data().canvas) {
+      await loadCanvasFromJSON(canvas, docSnap.data().canvas);
+    }
+  }
+  fetchAndLoad();
+
+  // Real-time Firestore listener
+  const unsub = onSnapshot(docRef, async (docSnap) => {
+    if (docSnap.exists() && docSnap.data().canvas) {
+      const current = JSON.stringify(canvas.toJSON());
+      if (docSnap.data().canvas !== current) {
+        await loadCanvasFromJSON(canvas, docSnap.data().canvas);
       }
-    });
+    }
+  });
 
-    // Live update listener
-    const unsub = onSnapshot(docRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const current = JSON.stringify(canvas.toJSON());
-        if (docSnap.data().canvas !== current) {
-          loadCanvasFromJSON(canvas, docSnap.data().canvas);
-        }
-      }
-    });
+  // Cleanup routine
+  return () => {
+    unsub();
+    canvas.dispose();
+  };
+}, [sceneId]);
 
-    // Cleanup
-    return () => {
-      unsub();
-      canvas.dispose();
-    };
-  }, [sceneId]);
 
   // Auto-save canvas changes to Firestore (debounced)
   useEffect(() => {
