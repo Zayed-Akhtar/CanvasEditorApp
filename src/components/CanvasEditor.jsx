@@ -11,6 +11,7 @@ function loadCanvasFromJSON(canvas, json) {
 function CanvasEditor({ sceneId }) {
   const canvasRef = useRef(null);
   const fabricRef = useRef(null);
+  const [isPenActive, setIsPenActive] = React.useState(false);
 
   // Load scene from Firestore
   useEffect(() => {
@@ -72,10 +73,30 @@ function CanvasEditor({ sceneId }) {
     const canvas = fabricRef.current;
     canvas.add(new fabric.Textbox("Edit me", { left: 200, top: 200, fontSize: 24 }));
   };
-  const addPen = () => {
-    const canvas = fabricRef.current;
-    canvas.isDrawingMode = !canvas.isDrawingMode;
-  };
+  
+const togglePen = () => {
+  const canvas = fabricRef.current;
+  if (!canvas) return;
+
+  // Toggle drawing mode
+  const newPenState = !canvas.isDrawingMode;
+  canvas.isDrawingMode = newPenState;
+
+  if (newPenState) {
+    // Make sure freeDrawingBrush exists and is initialized
+    if (!canvas.freeDrawingBrush) {
+      // PencilBrush is default in most Fabric.js releases; adjust if needed
+      canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+    }
+    canvas.freeDrawingBrush.color = "black"; // Set pen color
+    canvas.freeDrawingBrush.width = 3;       // Set pen thickness
+    canvas.selection = false;                // Prevent shape selection while drawing
+  } else {
+    canvas.selection = true; // Restore selection capability
+  }
+  setIsPenActive(newPenState);
+};
+
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -88,7 +109,9 @@ function CanvasEditor({ sceneId }) {
         <button onClick={addRect}>Rectangle</button>
         <button onClick={addCircle}>Circle</button>
         <button onClick={addText}>Text</button>
-        <button onClick={addPen}>Pen Tool</button>
+        <button onClick={togglePen}>
+        {isPenActive ? "Disable Pen" : "Pen Tool"}
+        </button>
         <button onClick={handleShare}>Share Canvas</button>
       </div>
       <canvas ref={canvasRef} width={800} height={600} style={{ border: "1px solid #ccc", marginTop: 10 }} />
