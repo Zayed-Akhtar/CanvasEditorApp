@@ -19,7 +19,7 @@ function CanvasEditor({ sceneId }) {
 
   // Load scene from Firestore
 useEffect(() => {
-  const canvas = new fabric.Canvas(canvasRef.current, { width: 800, height: 600, backgroundColor: "#fff" });
+  const canvas = new fabric.Canvas(canvasRef.current, { width: 1040, height: 590, backgroundColor: "#fff"  });
   fabricRef.current = canvas;
 
   const docRef = doc(db, "scenes", sceneId);
@@ -119,12 +119,32 @@ const togglePen = () => {
     alert("Link copied to clipboard!");
   };
 
+  const handleColorChange = (color) => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+    const activeObject = canvas.getActiveObject();
+    if (!activeObject) return;
+    // For Rect, Circle, etc.
+    if (activeObject.set && activeObject.fill !== undefined) {
+      activeObject.set("fill", color);
+      canvas.renderAll();
+      canvas.fire("object:modified"); // So it saves the new color!
+    }
+    // For text
+    if (activeObject.set && activeObject.text) {
+      activeObject.set("fill", color);
+      canvas.renderAll();
+      canvas.fire("object:modified");
+    }
+  };
+
+
   return (
     <>
     <Header/>
     <div className="canva-box">
-     <Toolbar addRect={addRect} addText={addText} addCircle={addCircle} togglePen={togglePen} handleShare={handleShare} handleDelete={handleDelete} isPenActive={isPenActive}/>
-      <canvas ref={canvasRef} width={900} height={800} style={{ border: "1px solid #ccc", marginTop: 10}} />
+      <Toolbar addRect={addRect} addText={addText} addCircle={addCircle} togglePen={togglePen} handleShare={handleShare} handleDelete={handleDelete} handleColorChange={handleColorChange} isPenActive={isPenActive} />
+      <canvas ref={canvasRef} width={1040} height={590} style={{ border: "1px solid #ccc", marginTop: 10}} />
     </div>
     </>
 

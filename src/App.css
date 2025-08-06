@@ -4,7 +4,7 @@ box-shadow: 4px 1px 10px rgba(0, 0, 0, 0.5);
 .canva-box{
     border: 1px solid gray;
     border-radius: 10px;
-    padding: 5px;
+    padding: 5px 10px 5px 15px;
     width: 70%;
     height: 670px;
     position: relative;
@@ -26,4 +26,18 @@ box-shadow: 4px 1px 10px rgba(0, 0, 0, 0.5);
     border-radius: 7px 7px 0 0;
     display: flex;
     gap: 10px;
+}
+
+.colorpicker{
+    display: flex;
+    border: 3px solid yellow;
+    border-radius: 5px;
+    padding: 2px 4px;
+    align-items: center;
+    cursor: pointer;
+}
+
+.colorpicker:hover{
+    border: 2px solid blue;
+    color: blue;
 }
