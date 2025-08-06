@@ -3,6 +3,8 @@ import * as fabric from "fabric";
 import { db } from "../firebase";
 import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 import debounce from "lodash.debounce";
+import Toolbar from "./Toolbar";
+import Header from "./Header";
 
 async function loadCanvasFromJSON(canvas, json) {
   if (!json) return;
@@ -103,6 +105,14 @@ const togglePen = () => {
   setIsPenActive(newPenState);
 };
 
+  const handleDelete = () => {
+    const canvas = fabricRef.current;
+    if (!canvas) return;
+    const activeObject = canvas.getActiveObject();
+    if (activeObject) {
+      canvas.remove(activeObject);
+    }
+  };
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -110,18 +120,14 @@ const togglePen = () => {
   };
 
   return (
-    <div>
-      <div>
-        <button onClick={addRect}>Rectangle</button>
-        <button onClick={addCircle}>Circle</button>
-        <button onClick={addText}>Text</button>
-        <button onClick={togglePen}>
-        {isPenActive ? "Disable Pen" : "Pen Tool"}
-        </button>
-        <button onClick={handleShare}>Share Canvas</button>
-      </div>
-      <canvas ref={canvasRef} width={800} height={600} style={{ border: "1px solid #ccc", marginTop: 10 }} />
+    <>
+    <Header/>
+    <div className="canva-box">
+     <Toolbar addRect={addRect} addText={addText} addCircle={addCircle} togglePen={togglePen} handleShare={handleShare} handleDelete={handleDelete} isPenActive={isPenActive}/>
+      <canvas ref={canvasRef} width={900} height={800} style={{ border: "1px solid #ccc", marginTop: 10}} />
     </div>
+    </>
+
   );
 }
 

@@ -1,0 +1,29 @@
+.header{
+box-shadow: 4px 1px 10px rgba(0, 0, 0, 0.5);
+}
+.canva-box{
+    border: 1px solid gray;
+    border-radius: 10px;
+    padding: 5px;
+    width: 70%;
+    height: 670px;
+    position: relative;
+    left: 15%;
+}
+
+.canva-header{
+    background-color: purple;
+    color: white;
+    box-shadow: 4px 6px 10px rgba(0, 0, 0, 0.5);
+}
+
+.toolbar{
+    border-bottom: none;
+    width: fit-content;
+    padding: 5px;
+    position: relative;
+    top: 10px;
+    border-radius: 7px 7px 0 0;
+    display: flex;
+    gap: 10px;
+}

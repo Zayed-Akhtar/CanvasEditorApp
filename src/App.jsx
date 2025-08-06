@@ -2,6 +2,8 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, useNavigate, useParams } from "react-router-dom";
 import CanvasEditor from "./components/CanvasEditor";
 import { v4 as uuidv4 } from "uuid";
+import "./App.css";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 function RedirectToCanvas() {
   const navigate = useNavigate();
