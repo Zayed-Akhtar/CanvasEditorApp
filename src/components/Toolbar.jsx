@@ -7,7 +7,7 @@ import { FaRegShareFromSquare } from "react-icons/fa6";
 import { MdDelete } from "react-icons/md";
 
 
-function Toolbar({ addRect, addCircle, addText, togglePen, handleShare, handleDelete, isPenActive, handleColorChange }) {
+function Toolbar({ addRect, addCircle, addText, togglePen, handleShare, handleDelete, isPenActive, handleColorChange, handleUndo, handleRedo }) {
     return (
         <div className="toolbar">
             <button className="btn btn-outline-primary" onClick={addRect}>Rectangle <PiRectangleDashedLight style={{ fontSize: '1.5rem' }} /></button>
@@ -26,7 +26,8 @@ function Toolbar({ addRect, addCircle, addText, togglePen, handleShare, handleDe
             />
             <span>pick color</span>
             </div>
-
+            <button className="btn btn-warning" onClick={handleUndo}>Undo</button>
+            <button className="btn btn-warning" onClick={handleRedo}>Redo</button>
 
             <button className='btn btn-danger' onClick={handleDelete}>Delete <MdDelete style={{ fontSize: '1.5rem' }} /></button>
             <button className="btn btn-primary" onClick={handleShare}>Share Canvas <FaRegShareFromSquare style={{ fontSize: '1.5rem' }} /></button>
