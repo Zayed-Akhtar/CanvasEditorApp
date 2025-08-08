@@ -28,6 +28,10 @@ box-shadow: 4px 1px 10px rgba(0, 0, 0, 0.5);
     gap: 10px;
 }
 
+.toolbar > * svg{
+    font-size: 1.5rem;
+} 
+
 .colorpicker{
     display: flex;
     border: 3px solid yellow;
@@ -43,4 +47,89 @@ box-shadow: 4px 1px 10px rgba(0, 0, 0, 0.5);
     cursor: not-allowed;
     opacity: 0.6;
     border-radius: 6px;
+}
+
+/* --- Tablet Screens (<=1024px) --- */
+@media (max-width: 1024px) {
+  .canva-box {
+    width: 98vw;
+    left: 1vw;
+    padding: 4px;
+    height: auto; /* Allow canvas to dictate height */
+    min-height: 0;
+  }
+  .toolbar {
+    max-width: 96vw;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+  .canva-box canvas {
+    width: 95vw !important;
+    min-width: 0;
+    max-height: 560px !important;
+  }
+}
+
+/* --- Small Tablets and Large Phones (<=800px) --- */
+@media (max-width: 800px) {
+  .canva-box {
+    width: 100vw;
+    left: 0;
+    padding: 0 2px;
+  }
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    position: static;
+    border-radius: 0;
+    gap: 5px;
+  }
+  .canva-box canvas {
+    width: 98vw !important;
+    max-width: 79vw;
+    height: 200px !important;
+    position: relative !important;
+    left: 135px !important;
+    bottom: 553px !important;
+  }
+  .colorpicker { /* Let it shrink if needed */
+    min-width: 0;
+    font-size: 0.95em;
+  }
+}
+
+/* --- Mobile Screens (<=550px) --- */
+@media (max-width: 550px) {
+  .canva-box {
+    width: 70vw;
+    border-radius: 0;
+    padding: 1px;
+    height: auto;
+    min-height: 0;
+  }
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 3px;
+    font-size: 0.95em;
+    padding: 2px 0 4px 0;
+    width: 99vw;
+  }
+  .toolbar > * {
+    width: 100%;
+    min-width: 70px;
+    flex: none;
+    margin: 2px 0;
+    box-sizing: border-box;
+  }
+  .canva-box canvas {
+    width: 60vw !important;
+    max-width: 100vw;
+    height: 135px !important;
+    min-height: 100px;
+  }
+  .colorpicker {
+    font-size: 0.85em;
+    padding: 1px 2px;
+  }
 }
