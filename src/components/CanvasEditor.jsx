@@ -30,7 +30,7 @@ function CanvasEditor({ sceneId }) {
 
   // Load scene from Firestore
   useEffect(() => {
-    const canvas = new fabric.Canvas(canvasRef.current, { width: 1040, height: 590, backgroundColor: "#fff" });
+    const canvas = new fabric.Canvas(canvasRef.current, { width: 1130, height: 590, backgroundColor: "#fff" });
     fabricRef.current = canvas;
 
     const docRef = doc(db, "scenes", sceneId);
@@ -182,6 +182,26 @@ function CanvasEditor({ sceneId }) {
     canvas.renderAll();
   };
 
+  const handleExport = () => {
+  const canvas = fabricRef.current;
+  if (!canvas) return;
+
+  // Get the canvas contents as a data URL (PNG)
+  const dataURL = canvas.toDataURL({
+    format: 'png',
+    quality: 1.0,
+  });
+
+  // Create a temporary link to trigger download
+  const link = document.createElement('a');
+  link.href = dataURL;
+  link.download = 'canvas-export.png';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+
   return (
     <>
       <Header />
@@ -196,9 +216,12 @@ function CanvasEditor({ sceneId }) {
           handleColorChange={handleColorChange}
           handleUndo={handleUndo}
           handleRedo={handleRedo}
+          handleExport={handleExport}
+          enableUndo={undoStack.length}
+          enableRedo={redoStack.length} 
           isPenActive={isPenActive}
         />
-        <canvas ref={canvasRef} width={1040} height={590} style={{ border: "1px solid #ccc", marginTop: 10 }} />
+        <canvas ref={canvasRef} width={1130} height={590} style={{ border: "1px solid #ccc", marginTop: 10 }} />
       </div>
     </>
   );

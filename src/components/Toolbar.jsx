@@ -5,9 +5,11 @@ import { IoTextOutline } from "react-icons/io5";
 import { FaPenAlt } from "react-icons/fa";
 import { FaRegShareFromSquare } from "react-icons/fa6";
 import { MdDelete } from "react-icons/md";
+import { LuUndo2 } from "react-icons/lu";
+import { LuRedo2 } from "react-icons/lu";
+import { FaDownload } from "react-icons/fa6";
 
-
-function Toolbar({ addRect, addCircle, addText, togglePen, handleShare, handleDelete, isPenActive, handleColorChange, handleUndo, handleRedo }) {
+function Toolbar({ addRect, addCircle, addText, togglePen, handleShare, handleDelete, isPenActive, handleColorChange, handleUndo, enableUndo, enableRedo, handleRedo, handleExport  }) {
     return (
         <div className="toolbar">
             <button className="btn btn-outline-primary" onClick={addRect}>Rectangle <PiRectangleDashedLight style={{ fontSize: '1.5rem' }} /></button>
@@ -26,11 +28,11 @@ function Toolbar({ addRect, addCircle, addText, togglePen, handleShare, handleDe
             />
             <span>pick color</span>
             </div>
-            <button className="btn btn-warning" onClick={handleUndo}>Undo</button>
-            <button className="btn btn-warning" onClick={handleRedo}>Redo</button>
-
-            <button className='btn btn-danger' onClick={handleDelete}>Delete <MdDelete style={{ fontSize: '1.5rem' }} /></button>
-            <button className="btn btn-primary" onClick={handleShare}>Share Canvas <FaRegShareFromSquare style={{ fontSize: '1.5rem' }} /></button>
+            <button disabled={enableUndo < 2} className='btn btn-warning' title='Undo' onClick={handleUndo}><LuUndo2 style={{ fontSize: '1.5rem' }}/></button>
+            <button disabled={!enableRedo} className='btn btn-warning' title='Redo' onClick={handleRedo}><LuRedo2 style={{ fontSize: '1.5rem' }}/></button>
+            <button className="btn btn-success" title='Download as PNG' onClick={handleExport}><FaDownload /></button>
+            <button className='btn btn-danger' title='Delete' onClick={handleDelete}><MdDelete style={{ fontSize: '1.5rem' }} /></button>
+            <button className="btn btn-primary" title='Share Canvas' onClick={handleShare}>Share <FaRegShareFromSquare style={{ fontSize: '1.5rem' }} /></button>
         </div>
     )
 }
