@@ -30,8 +30,8 @@ function Toolbar({ addRect, addCircle, addText, togglePen, handleShare, handleDe
             </div>
             <button disabled={enableUndo < 2} className='btn btn-warning' title='Undo' onClick={handleUndo}><LuUndo2 style={{ fontSize: '1.5rem' }}/></button>
             <button disabled={!enableRedo} className='btn btn-warning' title='Redo' onClick={handleRedo}><LuRedo2 style={{ fontSize: '1.5rem' }}/></button>
-            <button className="btn btn-success" title='Download as PNG' onClick={handleExport}><FaDownload /></button>
             <button className='btn btn-danger' title='Delete' onClick={handleDelete}><MdDelete style={{ fontSize: '1.5rem' }} /></button>
+            <button className="btn btn-success" title='Download as PNG' onClick={handleExport}><FaDownload /></button>
             <button className="btn btn-primary" title='Share Canvas' onClick={handleShare}>Share <FaRegShareFromSquare style={{ fontSize: '1.5rem' }} /></button>
         </div>
     )

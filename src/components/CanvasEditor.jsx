@@ -1,20 +1,14 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import * as fabric from "fabric";
 import { db } from "../firebase";
-import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
+import { loadCanvasFromJSON, exportCanvasAsPNG } from "../services/canvasService";
+import { fetchCanvasJSON, saveCanvasJSON, subscribeToCanvasScene } from "../services/firestoreService";
 import debounce from "lodash.debounce";
 import Toolbar from "./Toolbar";
 import Header from "./Header";
-
-// Utility: loads from JSON and renders
-async function loadCanvasFromJSON(canvas, json) {
-  if (!json) return;
-  await canvas.loadFromJSON(json);
-  canvas.renderAll();
-}
+import CanvaBoard from "./CanvaBoard";
 
 function CanvasEditor({ sceneId }) {
-  const canvasRef = useRef(null);
   const fabricRef = useRef(null);
   const [isPenActive, setIsPenActive] = React.useState(false);
   const [undoStack, setUndoStack] = React.useState([]);
@@ -28,52 +22,51 @@ function CanvasEditor({ sceneId }) {
     setUndoStack(prev => (prev[prev.length - 1] === json ? prev : [...prev, json]));
   }, []);
 
-  // Load scene from Firestore
+  // Receive Fabric canvas from child component
+  const handleCanvasInit = useCallback((canvasInstance) => {
+    fabricRef.current = canvasInstance;
+  }, []);
+
+  // Load scene from Firestore (always use fabricRef.current)
   useEffect(() => {
-    const canvas = new fabric.Canvas(canvasRef.current, { width: 1130, height: 590, backgroundColor: "#fff" });
-    fabricRef.current = canvas;
+    // Wait until fabricRef.current is set (by CanvaBoard)
+    if (!fabricRef.current) return;
 
-    const docRef = doc(db, "scenes", sceneId);
-
-    async function fetchAndLoad() {
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists() && docSnap.data().canvas) {
-        await loadCanvasFromJSON(canvas, docSnap.data().canvas);
-      }
-      // Initialize undo stack after first load
-      setUndoStack([JSON.stringify(canvas.toJSON())]);
+    fetchCanvasJSON(db, sceneId).then(async (json) => {
+      if (json) await loadCanvasFromJSON(fabricRef.current, json);
+      setUndoStack([JSON.stringify(fabricRef.current.toJSON())]);
       setRedoStack([]);
-    }
-    fetchAndLoad();
+    });
 
     // Real-time Firestore listener
-    const unsub = onSnapshot(docRef, async (docSnap) => {
-      if (docSnap.exists() && docSnap.data().canvas) {
-        const current = JSON.stringify(canvas.toJSON());
+    const unsub = subscribeToCanvasScene(db, sceneId, async (docSnap) => {
+      if (
+        docSnap.exists() &&
+        docSnap.data().canvas &&
+        fabricRef.current // Canvas ready?
+      ) {
+        const current = JSON.stringify(fabricRef.current.toJSON());
         if (docSnap.data().canvas !== current) {
-          await loadCanvasFromJSON(canvas, docSnap.data().canvas);
+          await loadCanvasFromJSON(fabricRef.current, docSnap.data().canvas);
         }
       }
     });
 
     // Cleanup
     return () => {
-      unsub();
-      canvas.dispose();
+      if (typeof unsub === "function") unsub();
     };
-  }, [sceneId]);
+  }, [sceneId, fabricRef.current]); // Add fabricRef.current to deps so it runs after canvas created
 
   // Auto-save canvas changes to Firestore (debounced)
   useEffect(() => {
-    const saveDebounced = debounce(() => {
-      const canvas = fabricRef.current;
-      const docRef = doc(db, "scenes", sceneId);
-      setDoc(docRef, { canvas: JSON.stringify(canvas.toJSON()) });
-    }, 800);
-
     if (!fabricRef.current) return;
 
-    // User-driven edits (move, resize, pen, remove object etc.)
+    const saveDebounced = debounce(() => {
+      saveCanvasJSON(db, sceneId, fabricRef.current);
+    }, 800);
+
+    // User-driven edits (move, resize, pen, remove)
     const onModified = () => saveHistory();
     fabricRef.current.on("object:modified", onModified);
     fabricRef.current.on("object:removed", onModified);
@@ -90,9 +83,9 @@ function CanvasEditor({ sceneId }) {
       fabricRef.current.off("object:removed", onModified);
       fabricRef.current.off("path:created", onModified);
     };
-  }, [sceneId, saveHistory]);
+  }, [sceneId, saveHistory, fabricRef.current]); // Add fabricRef.current to deps
 
-  // Toolbar actions – call saveHistory() just BEFORE any programmatic change
+  // Toolbar actions – call saveHistory() just BEFORE any programmatic change
   const addRect = () => {
     saveHistory();
     const canvas = fabricRef.current;
@@ -148,11 +141,10 @@ function CanvasEditor({ sceneId }) {
     const activeObject = canvas.getActiveObject();
     if (!activeObject) return;
     saveHistory();
-    // For Rect, Circle, etc.
     if (activeObject.set && activeObject.fill !== undefined) {
       activeObject.set("fill", color);
       canvas.renderAll();
-      canvas.fire("object:modified"); // To trigger autosave
+      canvas.fire("object:modified");
     }
     if (activeObject.set && activeObject.text) {
       activeObject.set("fill", color);
@@ -162,12 +154,12 @@ function CanvasEditor({ sceneId }) {
   };
 
   const handleUndo = async () => {
-    if (undoStack.length <= 1) return; // Don't undo beyond initial state
+    if (undoStack.length <= 1) return;
     const canvas = fabricRef.current;
     const newUndoStack = [...undoStack];
     const prevState = newUndoStack[newUndoStack.length - 2];
     setUndoStack(newUndoStack.slice(0, -1));
-    setRedoStack(r => [...r, JSON.stringify(canvas.toJSON())]);
+    setRedoStack((r) => [...r, JSON.stringify(canvas.toJSON())]);
     await canvas.loadFromJSON(prevState);
     canvas.renderAll();
   };
@@ -176,31 +168,15 @@ function CanvasEditor({ sceneId }) {
     if (redoStack.length === 0) return;
     const canvas = fabricRef.current;
     const nextState = redoStack[redoStack.length - 1];
-    setRedoStack(prev => prev.slice(0, -1));
-    setUndoStack(prev => [...prev, nextState]);
+    setRedoStack((prev) => prev.slice(0, -1));
+    setUndoStack((prev) => [...prev, nextState]);
     await canvas.loadFromJSON(nextState);
     canvas.renderAll();
   };
 
   const handleExport = () => {
-  const canvas = fabricRef.current;
-  if (!canvas) return;
-
-  // Get the canvas contents as a data URL (PNG)
-  const dataURL = canvas.toDataURL({
-    format: 'png',
-    quality: 1.0,
-  });
-
-  // Create a temporary link to trigger download
-  const link = document.createElement('a');
-  link.href = dataURL;
-  link.download = 'canvas-export.png';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
-
+    exportCanvasAsPNG(fabricRef.current);
+  };
 
   return (
     <>
@@ -218,10 +194,10 @@ function CanvasEditor({ sceneId }) {
           handleRedo={handleRedo}
           handleExport={handleExport}
           enableUndo={undoStack.length}
-          enableRedo={redoStack.length} 
+          enableRedo={redoStack.length}
           isPenActive={isPenActive}
         />
-        <canvas ref={canvasRef} width={1130} height={590} style={{ border: "1px solid #ccc", marginTop: 10 }} />
+        <CanvaBoard width={1130} height={590} onInit={handleCanvasInit} />
       </div>
     </>
   );
