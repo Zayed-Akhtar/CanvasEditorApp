@@ -9,7 +9,7 @@ import { LuUndo2 } from "react-icons/lu";
 import { LuRedo2 } from "react-icons/lu";
 import { FaDownload } from "react-icons/fa6";
 
-function Toolbar({ addRect, addCircle, addText, togglePen, handleShare, handleDelete, isPenActive, handleColorChange, handleUndo, enableUndo, enableRedo, handleRedo, handleExport  }) {
+function Toolbar({ addRect, addCircle, addText, togglePen, handleShare, handleDelete, isPenActive, handleColorChange, handleUndo, enableUndo, enableRedo, handleRedo, handleExport, handleLockObject, handleUnlockObject}) {
     return (
         <div className="toolbar">
             <button className="btn btn-outline-primary" onClick={addRect}>Rectangle <PiRectangleDashedLight style={{ fontSize: '1.5rem' }} /></button>
@@ -33,6 +33,9 @@ function Toolbar({ addRect, addCircle, addText, togglePen, handleShare, handleDe
             <button className='btn btn-danger' title='Delete' onClick={handleDelete}><MdDelete style={{ fontSize: '1.5rem' }} /></button>
             <button className="btn btn-success" title='Download as PNG' onClick={handleExport}><FaDownload /></button>
             <button className="btn btn-primary" title='Share Canvas' onClick={handleShare}>Share <FaRegShareFromSquare style={{ fontSize: '1.5rem' }} /></button>
+            <button onClick={handleLockObject}>Lock</button>
+            <button onClick={handleUnlockObject}>Unlock</button>
+
         </div>
     )
 }

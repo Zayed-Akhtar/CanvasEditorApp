@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import * as fabric from "fabric";
 import { db } from "../firebase";
-import { loadCanvasFromJSON, exportCanvasAsPNG } from "../services/canvasService";
+import { loadCanvasFromJSON, exportCanvasAsPNG, applyViewOnlyRestrictions, handleLockObject, handleUnlockObject } from "../services/canvasService";
 import { fetchCanvasJSON, saveCanvasJSON, subscribeToCanvasScene } from "../services/firestoreService";
 import debounce from "lodash.debounce";
 import Toolbar from "./Toolbar";
@@ -13,6 +13,7 @@ function CanvasEditor({ sceneId }) {
   const [isPenActive, setIsPenActive] = React.useState(false);
   const [undoStack, setUndoStack] = React.useState([]);
   const [redoStack, setRedoStack] = React.useState([]);
+  const isViewOnly = new URLSearchParams(window.location.search).get('viewOnly') === 'true';
 
   // Save canvas state to undo stack and clear redo stack
   const saveHistory = useCallback(() => {
@@ -25,7 +26,12 @@ function CanvasEditor({ sceneId }) {
   // Receive Fabric canvas from child component
   const handleCanvasInit = useCallback((canvasInstance) => {
     fabricRef.current = canvasInstance;
+     if (isViewOnly) {
+    // Disable selection and editing for all objects
+      applyViewOnlyRestrictions(canvasInstance)
+  }
   }, []);
+
 
   // Load scene from Firestore (always use fabricRef.current)
   useEffect(() => {
@@ -34,6 +40,9 @@ function CanvasEditor({ sceneId }) {
 
     fetchCanvasJSON(db, sceneId).then(async (json) => {
       if (json) await loadCanvasFromJSON(fabricRef.current, json);
+      if(isViewOnly){
+        applyViewOnlyRestrictions(fabricRef.current);
+      }
       setUndoStack([JSON.stringify(fabricRef.current.toJSON())]);
       setRedoStack([]);
     });
@@ -54,9 +63,9 @@ function CanvasEditor({ sceneId }) {
 
     // Cleanup
     return () => {
-      if (typeof unsub === "function") unsub();
+      unsub();
     };
-  }, [sceneId, fabricRef.current]); // Add fabricRef.current to deps so it runs after canvas created
+  }, [sceneId, fabricRef.current]); // Added fabricRef.current to deps so it runs after canvas created
 
   // Auto-save canvas changes to Firestore (debounced)
   useEffect(() => {
@@ -182,7 +191,8 @@ function CanvasEditor({ sceneId }) {
     <>
       <Header />
       <div className="canva-box">
-        <Toolbar
+        {!isViewOnly &&
+          <Toolbar
           addRect={addRect}
           addText={addText}
           addCircle={addCircle}
@@ -195,8 +205,11 @@ function CanvasEditor({ sceneId }) {
           handleExport={handleExport}
           enableUndo={undoStack.length}
           enableRedo={redoStack.length}
+          handleLockObject={()=>handleLockObject(fabricRef.current)}
+          handleUnlockObject={()=>handleUnlockObject(fabricRef.current)}
           isPenActive={isPenActive}
         />
+        }
         <CanvaBoard width={1130} height={590} onInit={handleCanvasInit} />
       </div>
     </>
